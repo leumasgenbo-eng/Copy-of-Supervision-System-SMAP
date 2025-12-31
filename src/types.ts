@@ -464,13 +464,16 @@ export interface GlobalSettings {
   generalActivityRegisters?: Record<string, RegisterWeek[]>;
   
   exerciseLogs?: any[];
+  // Added missing properties to satisfy GlobalSettings type requirements in App.tsx
   lessonPlans?: any[];
   lessonAssessments?: any[];
   
   academicCalendar?: Record<string, CalendarWeek[]>;
   
   calendarLists?: {
+      periods: string[];
       activities: string[];
+      assessments: string[];
       leadTeam: string[];
       extraCurricular: string[];
   };

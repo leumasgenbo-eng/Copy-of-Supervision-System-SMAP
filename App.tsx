@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { calculateClassStatistics, processStudentData, calculateFacilitatorStats } from './utils';
 import { GlobalSettings, StudentData, Department, Module, SchoolClass, SystemConfig } from './types';
@@ -16,12 +17,12 @@ import AcademicCalendar from './components/AcademicCalendar';
 import { supabase } from './supabaseClient';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
-  schoolName: "SCHOOL SUPERVISION & MANAGEMENT APP (S-MAP)",
-  schoolAddress: "P.O. BOX 123, LOCATION, REGION", 
+  schoolName: "UNITED BAYLOR ACADEMY",
+  schoolAddress: "P.O. BOX 123, ACCRA, GHANA", 
   schoolLogo: "", 
-  examTitle: "2ND MOCK 2025 BROAD SHEET EXAMINATION",
+  examTitle: "END OF TERM PERFORMANCE REPORT",
   mockSeries: "2",
-  mockAnnouncement: "Please ensure all scores are entered accurately. Section A is out of 40, Section B is out of 60.",
+  mockAnnouncement: "Please ensure all scores are entered accurately.",
   mockDeadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
   submittedSubjects: [],
   termInfo: "TERM 2",
@@ -30,10 +31,10 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   attendanceTotal: "60",
   startDate: "10-02-2025",
   endDate: "15-02-2025",
-  headTeacherName: "HEADMASTER NAME",
+  headTeacherName: "THE PRINCIPAL",
   reportDate: new Date().toLocaleDateString(),
-  schoolContact: "+233 24 000 0000",
-  schoolEmail: "info@smap-app.edu",
+  schoolContact: "+233 00 000 0000",
+  schoolEmail: "info@unitedbayloracademy.edu.gh",
   facilitatorMapping: {}, 
   gradingSystemRemarks: DEFAULT_GRADING_REMARKS,
   gradingSystemInterpretations: {
@@ -65,7 +66,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   lessonAssessments: [], 
   academicCalendar: {},
   calendarLists: {
-      periods: [], 
+      periods: [],
       activities: [],
       assessments: [],
       leadTeam: [],
@@ -141,9 +142,7 @@ const App: React.FC = () => {
   }, [activeDept]);
 
   const [reportViewMode, setReportViewMode] = useState<'master' | 'reports' | 'dashboard' | 'facilitators'>('master');
-  const [examSubTab, setExamSubTab] = useState<'indicators' | 'subjects' | 'daily_assessment' | 'lesson_plans' | 'exercise_assessment' | 'observation_entry'>('subjects');
-  const [timetableSubTab, setTimetableSubTab] = useState<'class_timetable' | 'exam_timetable' | 'analysis'>('class_timetable');
-
+  
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG);
   const [students, setStudents] = useState<StudentData[]>([]);
@@ -161,36 +160,6 @@ const App: React.FC = () => {
 
         if (settingsData && settingsData.payload) {
             const loadedSettings = { ...DEFAULT_SETTINGS, ...settingsData.payload };
-            if (!loadedSettings.earlyChildhoodGrading) {
-                loadedSettings.earlyChildhoodGrading = DEFAULT_SETTINGS.earlyChildhoodGrading;
-            }
-            if (!loadedSettings.promotionConfig) {
-                loadedSettings.promotionConfig = DEFAULT_SETTINGS.promotionConfig;
-            }
-            if (!loadedSettings.staffList || loadedSettings.staffList.length === 0) {
-                 const generatedStaff: any[] = [];
-                 const seenNames = new Set();
-                 Object.entries(loadedSettings.facilitatorMapping || {}).forEach(([subj, name]: [string, any]) => {
-                    if (name && !seenNames.has(name)) {
-                        generatedStaff.push({
-                            id: Date.now().toString() + Math.random(),
-                            name: name,
-                            role: 'Facilitator',
-                            status: 'Active',
-                            subjects: [subj],
-                            contact: '',
-                            qualification: ''
-                        });
-                        seenNames.add(name);
-                    } else if (name) {
-                        const staff = generatedStaff.find(s => s.name === name);
-                        if (staff && !staff.subjects.includes(subj)) {
-                            staff.subjects.push(subj);
-                        }
-                    }
-                });
-                loadedSettings.staffList = generatedStaff;
-            }
             setSettings(loadedSettings);
         }
 
@@ -214,30 +183,7 @@ const App: React.FC = () => {
   }, []);
 
   const isEarlyChildhood = activeDept === "Daycare" || activeDept === "Nursery" || activeDept === "Kindergarten";
-  const isObservationDept = activeDept === "Daycare" || activeDept === "Nursery" || activeDept === "Kindergarten";
-  const isBasicOrJHS = ["Lower Basic School", "Upper Basic School", "Junior High School"].includes(activeDept);
   const effectiveClass = activeStream ? `${activeClass} ${activeStream}` : activeClass;
-
-  useEffect(() => {
-    if (activeDept === 'Lower Basic School' || activeDept === 'Upper Basic School') {
-        setSettings(prev => ({
-            ...prev,
-            examTitle: "END OF TERM EXAMINATION",
-        }));
-    } else if (activeDept === 'Junior High School') {
-         if (activeClass.includes('Basic 7') || activeClass.includes('Basic 8')) {
-             setSettings(prev => ({
-                ...prev,
-                examTitle: "END OF TERM EXAMINATION",
-             }));
-         } else {
-             setSettings(prev => ({
-                ...prev,
-                examTitle: "2ND MOCK 2025 BROAD SHEET EXAMINATION",
-             }));
-         }
-    }
-  }, [activeDept, activeClass]);
 
   const handleSettingChange = (key: keyof GlobalSettings, value: any) => {
     if (!systemConfig.actionPermissions['canEditScores']) return; 
@@ -259,7 +205,7 @@ const App: React.FC = () => {
         const studentRows = students.map(s => ({ id: s.id, payload: s }));
         const { error: studentsError } = await supabase.from('students').upsert(studentRows);
         if (studentsError) throw studentsError;
-        alert("Data saved successfully to Supabase!");
+        alert("All Data Successfully Synced!");
     } catch (err: any) {
         alert(`Error saving data: ${err.message || "Unknown error"}`);
     } finally {
@@ -270,7 +216,7 @@ const App: React.FC = () => {
   const handleSystemReset = async () => {
       setStudents([]);
       setSettings(DEFAULT_SETTINGS);
-      alert("System has been reset to factory defaults. All local data cleared.");
+      alert("System Reset to Default Settings.");
   };
 
   const handleStudentUpdate = (id: number, field: keyof StudentData, value: any) => {
@@ -319,33 +265,12 @@ const App: React.FC = () => {
     window.print();
   };
 
-  const getGenericModuleName = () => {
-      if (activeModule === 'Assessment') {
-          if (examSubTab === 'indicators') return 'Indicators List' as any; 
-          if (examSubTab === 'subjects') return isEarlyChildhood ? 'Learning Area / Subject' as any : 'Subject List' as any;
-          if (examSubTab === 'daily_assessment') return isBasicOrJHS ? 'School Based Assessment (SBA)' as any : 'Daily Assessment' as any;
-          if (examSubTab === 'lesson_plans') return 'Lesson Plans';
-          if (examSubTab === 'exercise_assessment') return 'Exercise Assessment';
-          if (examSubTab === 'observation_entry') return 'Observation of development Indicator';
-      }
-      if (activeModule === 'Time Table') {
-          if (timetableSubTab === 'class_timetable') return isObservationDept ? 'Preschool and Kindergarten Time Table' as any : 'Class Time Table' as any;
-          if (timetableSubTab === 'exam_timetable') return isObservationDept ? 'Observation Schedule' as any : 'Examination Time Table' as any;
-          if (timetableSubTab === 'analysis') return 'Time Table Analysis' as any;
-      }
-      return activeModule;
-  };
-
-  const timetableLabel = isObservationDept ? 'Observation Schedule' : 'Examination Time Table';
-  const dailyAssessmentLabel = isBasicOrJHS ? 'School Based Assessment (SBA)' : 'Daily Assessment of Subject Score';
-
   if (isLoading) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-gray-100">
               <div className="text-center">
                   <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <h2 className="text-xl font-bold text-gray-700">Loading S-MAP Supervision System...</h2>
-                  <p className="text-gray-500">Connecting to database...</p>
+                  <h2 className="text-xl font-bold text-gray-700">UNITED BAYLOR ACADEMY S-MAP...</h2>
               </div>
           </div>
       );
@@ -380,8 +305,8 @@ const App: React.FC = () => {
       <div className="no-print bg-blue-900 text-white shadow-md z-50">
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex items-center gap-2">
-                 <div className="bg-white text-blue-900 rounded-full w-10 h-10 flex items-center justify-center font-black text-xs">S-MAP</div>
-                 <h1 className="font-bold text-lg hidden lg:block">S-MAP Supervision System</h1>
+                 <div className="bg-white text-blue-900 rounded-full w-10 h-10 flex items-center justify-center font-black text-xs">UBA</div>
+                 <h1 className="font-bold text-lg hidden lg:block">United Baylor Academy S-MAP</h1>
             </div>
             <div className="flex gap-1 overflow-x-auto">
                 {DEPARTMENTS.map(dept => (
@@ -420,13 +345,6 @@ const App: React.FC = () => {
                       </button>
                   ))}
               </div>
-              <div className="flex gap-1 items-center bg-blue-900 rounded p-0.5">
-                  <span className="text-[10px] font-bold uppercase text-blue-300 px-2">Stream:</span>
-                  <button onClick={() => setActiveStream("")} className={`px-2 py-0.5 text-[10px] rounded font-bold ${activeStream === "" ? 'bg-white text-blue-900' : 'text-blue-300 hover:bg-blue-800'}`}>None</button>
-                  <button onClick={() => setActiveStream("A")} className={`px-2 py-0.5 text-[10px] rounded font-bold ${activeStream === "A" ? 'bg-white text-blue-900' : 'text-blue-300 hover:bg-blue-800'}`}>A</button>
-                  <button onClick={() => setActiveStream("B")} className={`px-2 py-0.5 text-[10px] rounded font-bold ${activeStream === "B" ? 'bg-white text-blue-900' : 'text-blue-300 hover:bg-blue-800'}`}>B</button>
-                  <button onClick={() => setActiveStream("C")} className={`px-2 py-0.5 text-[10px] rounded font-bold ${activeStream === "C" ? 'bg-white text-blue-900' : 'text-blue-300 hover:bg-blue-800'}`}>C</button>
-              </div>
           </div>
       </div>
       <div className="no-print bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
@@ -443,34 +361,13 @@ const App: React.FC = () => {
               ))}
           </div>
       </div>
-      {activeModule === 'Assessment' && (
-          <div className="no-print bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-4 justify-center flex-wrap">
-             {isEarlyChildhood && (
-                 <>
-                    <button onClick={() => setExamSubTab('indicators')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'indicators' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>Indicators List</button>
-                    <button onClick={() => setExamSubTab('observation_entry')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'observation_entry' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>Observation Entry</button>
-                 </>
-             )}
-             <button onClick={() => setExamSubTab('subjects')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'subjects' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>{isEarlyChildhood ? 'Learning Area / Subject' : 'Subject List'}</button>
-             <button onClick={() => setExamSubTab('daily_assessment')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'daily_assessment' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>{dailyAssessmentLabel}</button>
-             <button onClick={() => setExamSubTab('lesson_plans')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'lesson_plans' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>Lesson Plans</button>
-             <button onClick={() => setExamSubTab('exercise_assessment')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'exercise_assessment' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>Exercise Assessment</button>
-          </div>
-      )}
-      {activeModule === 'Time Table' && (
-          <div className="no-print bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-4 justify-center flex-wrap">
-             <button onClick={() => setTimetableSubTab('class_timetable')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${timetableSubTab === 'class_timetable' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>{isObservationDept ? 'Preschool and Kindergarten Time Table' : 'Class Time Table'}</button>
-             <button onClick={() => setTimetableSubTab('exam_timetable')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${timetableSubTab === 'exam_timetable' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>{timetableLabel}</button>
-             <button onClick={() => setTimetableSubTab('analysis')} className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${timetableSubTab === 'analysis' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}>Time Table Analysis</button>
-          </div>
-      )}
       <div className="flex-1 overflow-auto bg-gray-100">
           {activeModule === 'Staff Management' ? (
               <StaffManagement settings={settings} onSettingChange={handleSettingChange} onSave={handleSave} department={activeDept} />
           ) : activeModule === 'Academic Calendar' ? (
               <AcademicCalendar settings={settings} onSettingChange={handleSettingChange} onSave={handleSave} />
           ) : activeModule === 'Pupil Management' ? (
-              <PupilManagement students={students} setStudents={setStudents} settings={settings} onSettingChange={handleSettingChange} onSave={handleSave} systemConfig={systemConfig} onSystemConfigChange={setSystemConfig} isAdmin={false} />
+              <PupilManagement students={students} setStudents={setStudents} settings={settings} onSettingChange={handleSettingChange} onSave={handleSave} systemConfig={systemConfig} onSystemConfigChange={setSystemConfig} isAdmin={systemConfig.activeRole === 'Admin'} />
           ) : activeModule === 'Result Entry' ? (
             <>
                 <div className="no-print bg-blue-50 border-b border-blue-200 p-2 flex justify-between items-center flex-wrap gap-2">
@@ -518,7 +415,7 @@ const App: React.FC = () => {
             </>
           ) : (
               <div className="p-8">
-                  <GenericModule department={activeDept} schoolClass={effectiveClass} module={getGenericModuleName()} settings={settings} onSettingChange={handleSettingChange} students={enrolledStudents} setStudents={setStudents} onSave={handleSave} />
+                  <GenericModule department={activeDept} schoolClass={effectiveClass} module={activeModule} settings={settings} onSettingChange={handleSettingChange} students={enrolledStudents} setStudents={setStudents} onSave={handleSave} />
               </div>
           )}
       </div>

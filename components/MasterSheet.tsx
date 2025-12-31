@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProcessedStudent, ClassStatistics, GlobalSettings } from '../types';
 import EditableField from './EditableField';
